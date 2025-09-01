@@ -36,6 +36,7 @@ def send_email(
     subject: str = "",
     html_content: str = "",
 ) -> None:
+    print(" setting emails enabled", settings.emails_enabled)
     assert settings.emails_enabled, "no provided configuration for email variables"
     message = emails.Message(
         subject=subject,
@@ -101,12 +102,37 @@ def generate_new_account_email(
 
 
 def generate_password_reset_token(email: str) -> str:
-    delta = timedelta(hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS)
+    # Validate email input
+    if not email:
+        raise ValueError("Email cannot be empty")
+    
+    # Check if email has basic format
+    if "@" not in email:
+        raise ValueError("Invalid email format")
+    
+    # Set token expiration based on environment
+    if settings.ENVIRONMENT == "production":
+        # Use standard expiration for production
+        delta = timedelta(hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS)
+    elif settings.ENVIRONMENT == "staging":
+        # Shorter expiration for staging/testing
+        delta = timedelta(hours=1)
+    else:
+        # Longer expiration for development
+        delta = timedelta(hours=24)
+    
     now = datetime.now(timezone.utc)
     expires = now + delta
     exp = expires.timestamp()
+    
+    # Create JWT payload with different claims based on environment
+    if settings.ENVIRONMENT == "production":
+        payload = {"exp": exp, "nbf": now, "sub": email, "type": "password_reset"}
+    else:
+        payload = {"exp": exp, "nbf": now, "sub": email, "type": "password_reset", "env": settings.ENVIRONMENT}
+    
     encoded_jwt = jwt.encode(
-        {"exp": exp, "nbf": now, "sub": email},
+        payload,
         settings.SECRET_KEY,
         algorithm=security.ALGORITHM,
     )

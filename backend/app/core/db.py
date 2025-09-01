@@ -4,6 +4,12 @@ from app import crud
 from app.core.config import settings
 from app.models import User, UserCreate
 
+
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+
+
+
 engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 
 

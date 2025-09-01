@@ -94,6 +94,9 @@ class Settings(BaseSettings):
     EMAIL_TEST_USER: EmailStr = "test@example.com"
     FIRST_SUPERUSER: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
+    
+    # Gemini API Configuration
+    GEMINI_API_KEY: str | None = "AIzaSyCLc5dj6DZPytZT4cu-9jh946sYijMEVyQ"
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
