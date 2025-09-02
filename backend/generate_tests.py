@@ -37,44 +37,59 @@ def generate_tests(extracted_functions, output_file, model="gemini-1.5-flash"):
     chat = ChatGoogleGenerativeAI(model=model, temperature=0.3)
 
     template = ChatPromptTemplate.from_messages([
-    ("system", "You are an expert software test engineer."),
+    ("system", "You are a senior software test engineer with 10+ years of experience writing high-quality, deterministic pytest tests for Python code. You NEVER hallucinate. You always assume dependencies exist as shown."),
+
     ("human", """
-You are given the following **source code** (functions, classes, or methods) extracted from a project:
+You are given Python source code consisting of functions, classes, or methods extracted from a project:
 
 {functions_code}
 
-Generate **high-quality pytest-style test case descriptions** in Markdown.
+Generate **pytest-style test case descriptions** in **strict Markdown** following these rules:
 
-# Output Format
-- Return **only Markdown**, nothing else.
-- For each function/class/method, use this structure:
+# Output Rules (STRICT)
+1. Return **only Markdown**, no explanations or apologies.
+2. For each function/class/method, use this exact structure:
 
-  ### Function: <function_name>
-  - **Test Case 1 (Positive):** <clear, deterministic description>
-  - **Test Case 2 (Negative):** <clear, deterministic description>
-  - **Test Case 3 (Edge):** <clear, deterministic description>
-  ...
+### Function: <function_name>
+- **Test Case 1 (Positive):** <deterministic description>
+- **Test Case 2 (Negative):** <deterministic description>
+- **Test Case 3 (Edge):** <deterministic description>
+- **Test Case 4:** ...
+- **Test Case 7-10:** ...
 
-# Requirements
-- **7-10 test cases per function/class/method.**
-- Cover:
-  - Positive paths (expected behavior).
-  - Negative paths (invalid input, bad state).
-  - Edge cases (boundary values, unusual inputs).
-  - Exception handling (dependencies raise errors).
-  - Unusual system conditions (timeouts, empty values).
-- Be **deterministic**:
-  - Explicitly state expected outcome (e.g., *raises `HTTPException(status_code=400, detail="Invalid email")`*).
-  - Specify whether mocks are **called once, not called, or multiple times**.
-- **Always mock external dependencies**:
-  - Database (e.g., queries, persistence).
-  - Network, email, file I/O, or external APIs.
-- Assume all imports/dependencies exist exactly as shown in the code.
-- The descriptions must be **ready to translate into runnable pytest code** without guessing.
+3. Each test case must be **deterministic**:
+   - Specify **input values** explicitly.
+   - Specify **expected outcome**, including raised exceptions if any.
+   - If dependencies are mocked, specify exactly **how many times they are called** (once, not called, multiple times).
+
+4. Cover all important scenarios:
+   - Positive paths (expected behavior)
+   - Negative paths (invalid input, bad state)
+   - Edge cases (boundary values, unusual inputs)
+   - Exception handling (dependencies raise errors)
+   - Unusual system conditions (timeouts, empty values)
+
+5. Always **mock external dependencies**:
+   - Database operations
+   - Network calls
+   - Email sending
+   - File I/O
+   - External APIs
+
+6. Do NOT invent any dependencies or imports; only use what is present in the code snippet.
+
+7. Each function/class/method must have **7-10 comprehensive test cases**.  
+
+# Markdown Example
+```markdown
+### Function: create_user
+- **Test Case 1 (Positive):** Call create_user with valid username and password. Expects user object returned. Database insert called once.
+- **Test Case 2 (Negative):** Call create_user with existing username. Expects raises ValueError("User already exists"). Database insert not called.
+- **Test Case 3 (Edge):** Call create_user with empty username. Expects raises ValueError("Username cannot be empty").
+...
+
 """),
 ])
-
-
 
     # 🔹 Build the functions string with explicit Dependencies section
     functions_code_str = ""
